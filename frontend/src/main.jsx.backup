@@ -1,0 +1,163 @@
+import React, { useEffect, useMemo, useState } from "react";
+import ReactDOM from "react-dom/client";
+import axios from "axios";
+import "./styles/index.css";
+
+const API_URL = "http://localhost:5000/api";
+
+function App() {
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const fetchHistory = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await axios.get(
+        `${API_URL}/detection/history?limit=50`
+      );
+
+      setHistory(response.data.data || []);
+    } catch (err) {
+      console.error(err);
+      setError(
+        "Unable to connect to the backend. Make sure the Node.js server is running."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const statistics = useMemo(() => {
+    const total = history.length;
+    const bots = history.filter((item) => item.prediction === 1).length;
+    const humans = total - bots;
+    const botRate = total > 0 ? ((bots / total) * 100).toFixed(1) : "0.0";
+
+    return {
+      total,
+      bots,
+      humans,
+      botRate,
+    };
+  }, [history]);
+
+  return (
+    <main className="app">
+      <header className="header">
+        <div>
+          <p className="eyebrow">AI-POWERED SECURITY</p>
+          <h1>Web Log Bot Detection</h1>
+          <p className="subtitle">
+            Analyze web sessions and identify automated bot traffic using
+            machine learning.
+          </p>
+        </div>
+
+        <button className="refresh-button" onClick={fetchHistory}>
+          Refresh
+        </button>
+      </header>
+
+      {error && <div className="error-banner">{error}</div>}
+
+      <section className="stats-grid">
+        <div className="stat-card">
+          <span>Total Detections</span>
+          <strong>{statistics.total}</strong>
+        </div>
+
+        <div className="stat-card">
+          <span>Human Sessions</span>
+          <strong>{statistics.humans}</strong>
+        </div>
+
+        <div className="stat-card">
+          <span>Bot Sessions</span>
+          <strong>{statistics.bots}</strong>
+        </div>
+
+        <div className="stat-card">
+          <span>Bot Detection Rate</span>
+          <strong>{statistics.botRate}%</strong>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <h2>Recent Detection History</h2>
+            <p>Latest sessions analyzed by the Random Forest model.</p>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="empty-state">Loading detection history...</div>
+        ) : history.length === 0 ? (
+          <div className="empty-state">
+            No detections available yet.
+          </div>
+        ) : (
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Result</th>
+                  <th>Human Probability</th>
+                  <th>Bot Probability</th>
+                  <th>Requests</th>
+                  <th>Average Time</th>
+                  <th>Detected At</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {history.map((item) => (
+                  <tr key={item.id}>
+                    <td>
+                      <span
+                        className={`badge ${
+                          item.prediction === 1 ? "bot" : "human"
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                    </td>
+
+                    <td>
+                      {(Number(item.human_probability) * 100).toFixed(1)}%
+                    </td>
+
+                    <td>
+                      {(Number(item.bot_probability) * 100).toFixed(1)}%
+                    </td>
+
+                    <td>{item.number_of_requests}</td>
+
+                    <td>{item.average_time}</td>
+
+                    <td>
+                      {new Date(item.created_at).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </main>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);

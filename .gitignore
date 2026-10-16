@@ -1,0 +1,50 @@
+Environment and secrets
+
+.env
+.env.*
+!.env.example
+
+Dependencies
+
+node_modules/
+**/node_modules/
+
+Python virtual environments
+
+.venv/
+venv/
+
+Python cache and compiled files
+
+pycache/
+*.py[cod]
+.pytest_cache/
+
+ML models and generated data
+
+.pkl
+.joblib
+ml/models/
+!ml/models/.gitkeep
+ml/data/raw/
+!ml/data/raw/.gitkeep
+ml/data/processed/*
+!ml/data/processed/.gitkeep
+ml/data/external/*
+!ml/data/external/.gitkeep
+
+Build outputs
+
+dist/
+build/
+coverage/
+
+Logs and OS files
+
+*.log
+.DS_Store
+
+IDE files
+
+.vscode/
+.idea/
